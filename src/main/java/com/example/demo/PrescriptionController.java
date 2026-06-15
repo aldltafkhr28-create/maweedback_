@@ -48,6 +48,21 @@ public class PrescriptionController {
 
     @PostMapping
     public ResponseEntity<?> createPrescription(@RequestBody Prescription prescription) {
+        String role = getCurrentRole();
+        String user = getCurrentUser();
+
+        // 🛠️ معالجة المشكلة: إذا لم يرسل الفرونت الرقم القومي للطبيب (بسبب حجبه في DTO)، نقوم بملئه تلقائياً
+        if (prescription.getDoctorNationalId() == null || prescription.getDoctorNationalId().trim().isEmpty()) {
+            if ("ROLE_DOCTOR".equals(role)) {
+                prescription.setDoctorNationalId(user);
+            } else if ("ROLE_ACCOUNTANT".equals(role)) {
+                var linkedDoctors = assistantRepository.findByAssistantNationalId(user).stream()
+                        .filter(a -> "APPROVED".equals(a.getStatus()))
+                        .findFirst();
+                linkedDoctors.ifPresent(a -> prescription.setDoctorNationalId(a.getDoctorNationalId()));
+            }
+        }
+
         if (!isAuthorizedForDoctor(prescription.getDoctorNationalId())) {
             return ResponseEntity.status(403).body("غير مصرح لك بإضافة روشتة لهذا الطبيب.");
         }

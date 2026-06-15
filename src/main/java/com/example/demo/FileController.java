@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * ✅ FileController — يخدم الملفات العامة (الصور، الأغطية، الشهادات)
+ * ملاحظة: ملفات الأشعة الطبية المشفرة تُخدَّم عبر MedicalRequestController
+ * للتحقق من الهوية وفك التشفير بشكل آمن في الذاكرة.
+ */
 @CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
 @RestController
 @RequestMapping("/uploads")
