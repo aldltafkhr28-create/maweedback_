@@ -40,7 +40,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private static final List<String> ALLOWED_ORIGINS = List.of(
         "http://localhost:3000",
-        "https://maweed-ui.vercel.app"
+        "https://maweed-online.vercel.app"
     );
 
     // ✅ Cache: token -> [isActive (0 or 1), expiryTimeMs]

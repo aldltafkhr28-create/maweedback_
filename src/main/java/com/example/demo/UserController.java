@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/auth")
 public class UserController {
@@ -91,11 +91,11 @@ public class UserController {
             boolean isValidSource = false;
             if (origin != null && (
                     origin.equals("http://localhost:3000") ||
-                    origin.equals("https://maweed-ui.vercel.app"))) {
+                    origin.equals("https://maweed-online.vercel.app"))) {
                 isValidSource = true;
             } else if (referer != null && (
                     referer.startsWith("http://localhost:3000") ||
-                    referer.startsWith("https://maweed-ui.vercel.app"))) {
+                    referer.startsWith("https://maweed-online.vercel.app"))) {
                 isValidSource = true;
             }
             if (!isValidSource) {
@@ -138,11 +138,11 @@ public class UserController {
         boolean isValidSource = false;
         if (origin != null && (
                 origin.equals("http://localhost:3000") ||
-                origin.equals("https://maweed-ui.vercel.app"))) {
+                origin.equals("https://maweed-online.vercel.app"))) {
             isValidSource = true;
         } else if (referer != null && (
                 referer.startsWith("http://localhost:3000") ||
-                referer.startsWith("https://maweed-ui.vercel.app"))) {
+                referer.startsWith("https://maweed-online.vercel.app"))) {
             isValidSource = true;
         }
         if (!isValidSource) {

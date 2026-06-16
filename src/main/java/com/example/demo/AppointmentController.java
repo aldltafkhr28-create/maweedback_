@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/appointments")
 public class AppointmentController {
@@ -103,9 +103,9 @@ public class AppointmentController {
             String referer = request.getHeader("Referer");
             
             boolean isValidSource = false;
-            if (origin != null && (origin.equals("http://localhost:3000") || origin.equals("https://maweed-ui.vercel.app"))) {
+            if (origin != null && (origin.equals("http://localhost:3000") || origin.equals("https://maweed-online.vercel.app"))) {
                 isValidSource = true;
-            } else if (referer != null && (referer.startsWith("http://localhost:3000") || referer.startsWith("https://maweed-ui.vercel.app"))) {
+            } else if (referer != null && (referer.startsWith("http://localhost:3000") || referer.startsWith("https://maweed-online.vercel.app"))) {
                 isValidSource = true;
             }
 

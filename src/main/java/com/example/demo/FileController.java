@@ -14,7 +14,7 @@ import java.nio.file.Paths;
  * ملاحظة: ملفات الأشعة الطبية المشفرة تُخدَّم عبر MedicalRequestController
  * للتحقق من الهوية وفك التشفير بشكل آمن في الذاكرة.
  */
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/uploads")
 public class FileController {

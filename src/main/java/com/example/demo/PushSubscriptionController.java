@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * ✅ PushSubscriptionController — API لتسجيل/إلغاء المتصفح في قائمة الإشعارات
  */
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/push")
 public class PushSubscriptionController {

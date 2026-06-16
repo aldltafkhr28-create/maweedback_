@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.Map;
 
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/doctors/{nationalId}/holiday")
 public class DoctorHolidayController {

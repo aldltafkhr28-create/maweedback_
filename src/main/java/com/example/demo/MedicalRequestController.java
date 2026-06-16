@@ -32,7 +32,7 @@ import java.util.UUID;
  *
  * 🔒 IDOR Protection: كل endpoint يتحقق من هوية الـ JWT قبل السماح بالوصول
  */
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/medical-requests")
 public class MedicalRequestController {

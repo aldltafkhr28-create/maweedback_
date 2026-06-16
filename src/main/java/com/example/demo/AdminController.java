@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-ui.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://maweed-online.vercel.app"})
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
