@@ -54,4 +54,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("doctorNationalId") String doctorNationalId,
             @Param("startDate") LocalDate startDate
     );
+
+    // ✅ جلب المواعيد المنتهية والتي لم يحضر أصحابها (لعمليات تسجيل الغياب التلقائي)
+    @Query("SELECT a FROM Appointment a WHERE a.appointmentDate < :today AND a.status IN ('PENDING', 'APPROVED', 'ARRIVED')")
+    List<Appointment> findPastUncompletedAppointments(@Param("today") LocalDate today);
 }

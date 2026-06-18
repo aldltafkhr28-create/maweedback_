@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -21,12 +22,17 @@ public class AppointmentReminderScheduler {
     private AppointmentRepository appointmentRepository;
 
     @Autowired
+    private com.example.demo.repository.UserRepository userRepository;
+
+    @Autowired
     private PushNotificationService pushService;
 
     @Scheduled(fixedRate = 60_000) // كل دقيقة
     public void sendAppointmentReminders() {
-        LocalDate today = LocalDate.now();
-        LocalTime now   = LocalTime.now();
+        // ✅ استخدام توقيت القاهرة (UTC+3) بدلاً من UTC
+        ZoneId cairoZone = ZoneId.of("Africa/Cairo");
+        LocalDate today = LocalDate.now(cairoZone);
+        LocalTime now   = LocalTime.now(cairoZone);
 
         // نافذة الـ 20 دقيقة: من 19 لـ 21 دقيقة قدام
         LocalTime from = now.plusMinutes(19);
@@ -56,6 +62,51 @@ public class AppointmentReminderScheduler {
 
             } catch (Exception e) {
                 System.err.println("⚠️ خطأ في إرسال تذكير الموعد: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * ✅ عملية تسجيل الغياب التلقائي (Automated No-Show)
+     * تشتغل الساعة 3:00 الفجر يومياً لتعالج المواعيد اللي محدش حضرها في الأيام السابقة
+     */
+    @Scheduled(cron = "0 0 3 * * ?", zone = "Africa/Cairo")
+    public void processDailyNoShows() {
+        ZoneId cairoZone = ZoneId.of("Africa/Cairo");
+        LocalDate today = LocalDate.now(cairoZone);
+
+        // جلب كل المواعيد اللي كانت قبل النهاردة ولسه حالتها معلقة (محدش قفلها ولا أثبت حضورها)
+        List<com.example.demo.Appointment> missedAppointments = appointmentRepository.findPastUncompletedAppointments(today);
+
+        for (com.example.demo.Appointment appt : missedAppointments) {
+            try {
+                // 1. تغيير حالة الموعد لـ غياب
+                appt.setStatus("NO_SHOW");
+                appointmentRepository.save(appt);
+
+                // 2. تحديث سجل المريض
+                userRepository.findByNationalId(appt.getPatientNationalId()).ifPresent(user -> {
+                    user.setNoShowCount(user.getNoShowCount() + 1);
+                    
+                    String title = "⚠️ إنذار غياب";
+                    String body = "تم تسجيل غيابك عن موعدك السابق مع " + appt.getDoctorName() + ". نرجو الالتزام بالمواعيد.";
+
+                    // حظر الحساب إذا وصلت الغيابات لـ 3
+                    if (user.getNoShowCount() >= 3) {
+                        user.setEnabled(false); // 🚫 الحظر
+                        title = "🚫 تم إيقاف حسابك";
+                        body = "تم إيقاف حسابك لتجاوز الحد الأقصى للغياب بدون إلغاء (3 مرات). يرجى التواصل مع الدعم.";
+                    }
+                    
+                    userRepository.save(user);
+
+                    // 3. إرسال إشعار للمريض
+                    pushService.sendToUser(user.getNationalId(), title, body);
+                    System.out.println("✅ Automated NO_SHOW applied to patient: " + user.getNationalId() + " | Warning count: " + user.getNoShowCount());
+                });
+
+            } catch (Exception e) {
+                System.err.println("⚠️ خطأ في معالجة غياب تلقائي للموعد رقم " + appt.getId() + ": " + e.getMessage());
             }
         }
     }

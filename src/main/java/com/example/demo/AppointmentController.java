@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -139,7 +140,7 @@ public class AppointmentController {
 
             // 1. فحص قاعدة: ميعاد واحد للمريض مع نفس الدكتور خلال الـ 3 أيام كحد أقصى (للمريض فقط)
             if (!"ROLE_DOCTOR".equals(curRole)) {
-                LocalDate today = LocalDate.now();
+                LocalDate today = LocalDate.now(ZoneId.of("Africa/Cairo"));
                 LocalDate dayAfterTomorrow = today.plusDays(2);
                 
                 List<Appointment> patientApptsWithThisDoctor = appointmentRepository
@@ -292,12 +293,17 @@ public class AppointmentController {
         if (optionalAppointment.isPresent()) {
             Appointment appointment = optionalAppointment.get();
 
+            String newStatus = payload.get("status"); // PENDING, APPROVED, REJECTED
+
             // 🔒 التحقق من الهوية
-            if (appointment.getDoctorNationalId() != null && !isAuthorizedForDoctor(appointment.getDoctorNationalId().trim())) {
+            String curRole = getCurrentRole();
+            String curUser = getCurrentUser();
+            boolean isDoctorOrAssistant = (appointment.getDoctorNationalId() != null && isAuthorizedForDoctor(appointment.getDoctorNationalId().trim()));
+            boolean isPatientMarkingDone = ("ROLE_PATIENT".equals(curRole) && curUser != null && curUser.equals(appointment.getPatientNationalId()) && "DONE".equalsIgnoreCase(newStatus));
+
+            if (!isDoctorOrAssistant && !isPatientMarkingDone) {
                 return ResponseEntity.status(403).body("غير مصرح لك بتعديل حالة حجز لطبيب آخر.");
             }
-
-            String newStatus = payload.get("status"); // PENDING, APPROVED, REJECTED
             if (newStatus != null) {
                 String upperStatus = newStatus.toUpperCase();
                 if (upperStatus.equals("PENDING") || upperStatus.equals("APPROVED") || upperStatus.equals("REJECTED") || upperStatus.equals("DONE") || upperStatus.equals("NO_SHOW") || upperStatus.equals("ARRIVED")) {
@@ -379,6 +385,60 @@ public class AppointmentController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    /**
+     * الحصول على دور المريض الحالي (Live Queue Tracker)
+     */
+    @GetMapping("/{id}/queue-status")
+    public ResponseEntity<?> getQueueStatus(@PathVariable Long id) {
+        Optional<Appointment> opt = appointmentRepository.findById(id);
+        if (!opt.isPresent()) return ResponseEntity.notFound().build();
+        Appointment appointment = opt.get();
+
+        // 🔒 التحقق من الهوية
+        String curRole = getCurrentRole();
+        String curUser = getCurrentUser();
+        if ("ROLE_PATIENT".equals(curRole) && !curUser.equals(appointment.getPatientNationalId())) {
+            return ResponseEntity.status(403).body("غير مصرح لك");
+        }
+
+        // المتتبع يعمل فقط لمواعيد اليوم
+        if (!appointment.getAppointmentDate().equals(LocalDate.now(ZoneId.of("Africa/Cairo")))) {
+            return ResponseEntity.badRequest().body("متتبع الدور متاح فقط لمواعيد اليوم");
+        }
+
+        // جلب جميع مواعيد الطبيب في نفس اليوم
+        List<Appointment> todaysAppointments = appointmentRepository.findByDoctorNationalIdAndAppointmentDate(
+                appointment.getDoctorNationalId(), LocalDate.now(ZoneId.of("Africa/Cairo"))
+        );
+
+        // تصفية المواعيد النشطة فقط
+        List<Appointment> activeQueue = todaysAppointments.stream()
+                .filter(a -> "PENDING".equals(a.getStatus()) || "APPROVED".equals(a.getStatus()) || "ARRIVED".equals(a.getStatus()))
+                .sorted((a1, a2) -> a1.getAppointmentTime().compareTo(a2.getAppointmentTime()))
+                .collect(Collectors.toList());
+
+        int position = -1;
+        for (int i = 0; i < activeQueue.size(); i++) {
+            if (activeQueue.get(i).getId().equals(id)) {
+                position = i + 1;
+                break;
+            }
+        }
+
+        if (position == -1) {
+            // المريض غير موجود في قائمة الانتظار (ربما تم الانتهاء من كشفه أو تم رفضه)
+            return ResponseEntity.ok(Map.of("position", 0, "estimatedWaitMinutes", 0)); 
+        }
+
+        int estimatedWaitMinutes = (position - 1) * 20; // 20 دقيقة متوسط لكل مريض يسبقه
+
+        return ResponseEntity.ok(Map.of(
+            "position", position,
+            "estimatedWaitMinutes", estimatedWaitMinutes
+        ));
+    }
+
     /**
      * 5. حذف حجز
      */
