@@ -9,4 +9,4 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 ENV PORT=8080
 EXPOSE ${PORT}
-ENTRYPOINT java -Xms64m -Xmx300m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -Djava.security.egd=file:/dev/./urandom -jar app.jar --spring.profiles.active=railway --server.port=${PORT}
+ENTRYPOINT java -Xms64m -Xmx256m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom -jar app.jar --spring.profiles.active=railway --server.port=${PORT}

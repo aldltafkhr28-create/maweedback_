@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "appointments")
@@ -51,4 +53,14 @@ public class Appointment {
     // ✅ علم التذكير — عشان السيرفر مابعتش الإشعار أكتر من مرة
     @Column(columnDefinition = "boolean default false")
     private Boolean reminderSent = false;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now(ZoneId.of("Africa/Cairo"));
+        }
+    }
 }

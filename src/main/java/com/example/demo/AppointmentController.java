@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -138,22 +139,21 @@ public class AppointmentController {
                 return ResponseEntity.status(403).body("لا يمكنك حجز موعد لمريض آخر.");
             }
 
-            // 1. فحص قاعدة: ميعاد واحد للمريض مع نفس الدكتور خلال الـ 3 أيام كحد أقصى (للمريض فقط)
+            // 1. فحص قاعدة: ميعاد واحد للمريض مع نفس الدكتور خلال 48 ساعة من وقت الحجز (للمريض فقط)
             if (!"ROLE_DOCTOR".equals(curRole)) {
-                LocalDate today = LocalDate.now(ZoneId.of("Africa/Cairo"));
-                LocalDate dayAfterTomorrow = today.plusDays(2);
-                
-                List<Appointment> patientApptsWithThisDoctor = appointmentRepository
-                        .findByPatientAndDoctorInDateRange(
-                                appointment.getPatientNationalId(), 
-                                appointment.getDoctorNationalId(), 
-                                today, 
-                                dayAfterTomorrow
+                LocalDateTime now = LocalDateTime.now(ZoneId.of("Africa/Cairo"));
+                LocalDateTime since48h = now.minusHours(48);
+
+                List<Appointment> recentBookings = appointmentRepository
+                        .findRecentActiveBookings(
+                                appointment.getPatientNationalId(),
+                                appointment.getDoctorNationalId(),
+                                since48h
                         );
-                        
-                if (!patientApptsWithThisDoctor.isEmpty()) {
+
+                if (!recentBookings.isEmpty()) {
                     return ResponseEntity.badRequest().body(
-                            "لقد قمت بحجز موعد مع هذا الطبيب مسبقاً وتنتظر الكشف. لا يمكنك حجز أكثر من موعد واحد لنفس الطبيب خلال فترة الثلاثة أيام المتاحة."
+                            "لقد قمت بحجز موعد مع هذا الطبيب مسبقاً. لا يمكنك حجز أكثر من موعد واحد لنفس الطبيب خلال 48 ساعة من تاريخ الحجز."
                     );
                 }
             }

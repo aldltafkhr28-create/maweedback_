@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -38,6 +39,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("doctorNationalId") String doctorNationalId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    // 🔒 فحص الحجز في آخر 48 ساعة بناءً على وقت الحجز (createdAt)
+    @Query("SELECT a FROM Appointment a WHERE a.patientNationalId = :patientNationalId AND a.doctorNationalId = :doctorNationalId AND a.createdAt >= :since AND a.status NOT IN ('REJECTED', 'CANCELLED')")
+    List<Appointment> findRecentActiveBookings(
+            @Param("patientNationalId") String patientNationalId,
+            @Param("doctorNationalId") String doctorNationalId,
+            @Param("since") LocalDateTime since
     );
 
     // ✅ جلب المواعيد اللي محتاجة تذكير (اللي ميعادها في نافذة الـ 20 دقيقة الجاية)
